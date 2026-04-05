@@ -33,6 +33,7 @@ jobs:
       - name: Write deploy values
         env:
           AI_USAGE_SVC_HOST: ${{ secrets.AI_USAGE_SVC_HOST }}
+          AI_USAGE_API_BEARER_TOKEN: ${{ secrets.AI_USAGE_API_BEARER_TOKEN }}
           AI_USAGE_REDIS_URL: ${{ secrets.AI_USAGE_REDIS_URL }}
           AI_USAGE_RABBITMQ_URL: ${{ secrets.AI_USAGE_RABBITMQ_URL }}
           AI_USAGE_INFLUX_URL: ${{ secrets.AI_USAGE_INFLUX_URL }}
@@ -44,6 +45,7 @@ jobs:
           ingress:
             host: "${AI_USAGE_SVC_HOST}"
           config:
+            apiBearerToken: "${AI_USAGE_API_BEARER_TOKEN}"
             redisUrl: "${AI_USAGE_REDIS_URL}"
             rabbitmqUrl: "${AI_USAGE_RABBITMQ_URL}"
             influxUrl: "${AI_USAGE_INFLUX_URL}"

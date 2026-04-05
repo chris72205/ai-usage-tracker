@@ -8,6 +8,14 @@
       "strict_min_version": "109.0"
     }
   },
+  "permissions": ["storage"],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [{
     "matches": ["https://claude.ai/*"],
     "js": ["intercept.js"],

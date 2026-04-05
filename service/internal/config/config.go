@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Port             string
 	ServiceName      string // used as Redis key prefix to avoid collisions on shared instances
+	APIBearerToken   string
 	RedisURL         string
 	DedupWindow      time.Duration // captures within this window are discarded after the first
 	RabbitMQURL      string
@@ -23,6 +24,7 @@ func Load() Config {
 	return Config{
 		Port:             getEnv("PORT", "8080"),
 		ServiceName:      getEnv("SERVICE_NAME", "ai-usage-svc"),
+		APIBearerToken:   getEnv("API_BEARER_TOKEN", ""),
 		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		DedupWindow:      time.Duration(getEnvInt("DEDUP_WINDOW_SECONDS", 30)) * time.Second,
 		RabbitMQURL:      getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),

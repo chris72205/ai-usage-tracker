@@ -61,11 +61,17 @@ window.fetch = async (...args) => {
         const usage = platform.parse(raw);
         console.log('[AI Usage]', usage);
 
-        // fetch('https://your-service.example.com/usage', {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(usage),
-        // }).catch(() => {});
+        chrome.storage.local.get(['serviceUrl', 'bearerToken'], ({ serviceUrl, bearerToken }) => {
+          if (!serviceUrl || !bearerToken || !serviceUrl.startsWith('https://')) return;
+          fetch(serviceUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${bearerToken}`,
+            },
+            body: JSON.stringify(usage),
+          }).catch(() => {});
+        });
       }).catch(() => {});
     }
   }

@@ -45,7 +45,7 @@ func main() {
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-	r.Post("/usage", h.Handle)
+	r.With(handler.BearerAuth(cfg.APIBearerToken)).Post("/usage", h.Handle)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

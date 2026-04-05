@@ -38,6 +38,7 @@ resources:
 config:
   port: "8080"
   serviceName: ai-usage-svc
+  apiBearerToken: ""
   dedupWindowSeconds: "30"
   redisUrl: ""
   rabbitmqUrl: ""
