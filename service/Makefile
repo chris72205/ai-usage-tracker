@@ -1,4 +1,4 @@
-.PHONY: build test lint vet tidy check
+.PHONY: build test lint vet tidy check helm-lint
 
 # Build the server binary
 build:
@@ -20,6 +20,10 @@ lint: vet
 tidy:
 	go mod tidy
 	go mod verify
+
+# Lint the Helm chart (requires helm: https://helm.sh/docs/intro/install/)
+helm-lint:
+	helm lint charts/ai-usage-svc
 
 # Full check: lint + test (mirrors CI)
 check: lint test

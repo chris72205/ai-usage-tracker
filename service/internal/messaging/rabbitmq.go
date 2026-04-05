@@ -39,7 +39,6 @@ type RabbitMQ struct {
 	conn     *amqp.Connection
 	ch       *amqp.Channel
 	exchange string
-	platform string
 }
 
 func NewRabbitMQ(cfg config.Config) (*RabbitMQ, error) {
@@ -77,7 +76,6 @@ func NewRabbitMQ(cfg config.Config) (*RabbitMQ, error) {
 		conn:     conn,
 		ch:       ch,
 		exchange: cfg.RabbitMQExchange,
-		platform: cfg.Platform,
 	}, nil
 }
 
@@ -102,20 +100,20 @@ func (r *RabbitMQ) Publish(payload *model.UsagePayload) error {
 			continue
 		}
 		msg := windowMessage{
-			Platform:       r.platform,
+			Platform:       payload.Platform,
 			Window:         w.name,
 			UtilizationPct: w.usage.UtilizationPct,
 			ResetsAt:       w.usage.ResetsAt,
 			CapturedAt:     payload.CapturedAt,
 		}
-		if err := r.publish(fmt.Sprintf("usage.%s.%s", r.platform, w.name), msg); err != nil {
+		if err := r.publish(fmt.Sprintf("usage.%s.%s", payload.Platform, w.name), msg); err != nil {
 			return err
 		}
 	}
 
 	if payload.ExtraUsage != nil {
 		msg := extraMessage{
-			Platform:     r.platform,
+			Platform:     payload.Platform,
 			Window:       "extra_usage",
 			IsEnabled:    payload.ExtraUsage.IsEnabled,
 			MonthlyLimit: payload.ExtraUsage.MonthlyLimit,
@@ -123,7 +121,7 @@ func (r *RabbitMQ) Publish(payload *model.UsagePayload) error {
 			Utilization:  payload.ExtraUsage.UtilizationPct,
 			CapturedAt:   payload.CapturedAt,
 		}
-		if err := r.publish(fmt.Sprintf("usage.%s.extra_usage", r.platform), msg); err != nil {
+		if err := r.publish(fmt.Sprintf("usage.%s.extra_usage", payload.Platform), msg); err != nil {
 			return err
 		}
 	}

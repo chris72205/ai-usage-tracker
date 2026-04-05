@@ -1,0 +1,65 @@
+name: Service Deploy
+
+on:
+  workflow_run:
+    workflows: [Service Build]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: service-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ai-usage-tracker-runner
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Write deploy values
+        env:
+          AI_USAGE_SVC_HOST: ${{ secrets.AI_USAGE_SVC_HOST }}
+          AI_USAGE_REDIS_URL: ${{ secrets.AI_USAGE_REDIS_URL }}
+          AI_USAGE_RABBITMQ_URL: ${{ secrets.AI_USAGE_RABBITMQ_URL }}
+          AI_USAGE_INFLUX_URL: ${{ secrets.AI_USAGE_INFLUX_URL }}
+          AI_USAGE_INFLUX_TOKEN: ${{ secrets.AI_USAGE_INFLUX_TOKEN }}
+          AI_USAGE_INFLUX_ORG: ${{ secrets.AI_USAGE_INFLUX_ORG }}
+          DOCKERHUB_REGISTRY_CONFIG: ${{ secrets.DOCKERHUB_REGISTRY_CONFIG }}
+        run: |
+          cat <<EOF > /tmp/deploy-values.yaml
+          ingress:
+            host: "${AI_USAGE_SVC_HOST}"
+          config:
+            redisUrl: "${AI_USAGE_REDIS_URL}"
+            rabbitmqUrl: "${AI_USAGE_RABBITMQ_URL}"
+            influxUrl: "${AI_USAGE_INFLUX_URL}"
+            influxToken: "${AI_USAGE_INFLUX_TOKEN}"
+            influxOrg: "${AI_USAGE_INFLUX_ORG}"
+          dockerhub_registry_config: "${DOCKERHUB_REGISTRY_CONFIG}"
+          EOF
+
+      - name: Deploy
+        run: |
+          helm upgrade ai-usage-svc service/charts/ai-usage-svc \
+            --install \
+            --atomic \
+            --cleanup-on-fail \
+            --timeout 5m \
+            --namespace ai-usage-tracker \
+            --create-namespace \
+            --set image.tag=${{ github.sha }} \
+            -f /tmp/deploy-values.yaml

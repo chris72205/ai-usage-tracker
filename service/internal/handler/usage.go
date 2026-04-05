@@ -32,6 +32,11 @@ func (h *UsageHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if payload.Platform == "" {
+		http.Error(w, "missing platform", http.StatusBadRequest)
+		return
+	}
+
 	allowed, err := h.dedup.Allow(r.Context(), payload.Platform)
 	if err != nil {
 		// Redis is unavailable — log and allow through rather than silently dropping data.

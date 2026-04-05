@@ -8,8 +8,7 @@ import (
 
 type Config struct {
 	Port             string
-	ServiceName      string        // used as Redis key prefix to avoid collisions on shared instances
-	Platform         string        // identifies the source platform, e.g. "claude", "codex", "copilot"
+	ServiceName      string // used as Redis key prefix to avoid collisions on shared instances
 	RedisURL         string
 	DedupWindow      time.Duration // captures within this window are discarded after the first
 	RabbitMQURL      string
@@ -24,7 +23,6 @@ func Load() Config {
 	return Config{
 		Port:             getEnv("PORT", "8080"),
 		ServiceName:      getEnv("SERVICE_NAME", "ai-usage-svc"),
-		Platform:         getEnv("PLATFORM", "claude"),
 		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		DedupWindow:      time.Duration(getEnvInt("DEDUP_WINDOW_SECONDS", 30)) * time.Second,
 		RabbitMQURL:      getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),

@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # --- build stage ---
+# Build on the native runner platform; cross-compile to target via Go toolchain.
 FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
 
 WORKDIR /app
@@ -9,12 +10,13 @@ RUN go mod download
 
 COPY . .
 
-ARG TARGETOS=linux
-ARG TARGETARCH=arm64
-# For RPi 3 running a 32-bit OS, build with: --build-arg TARGETARCH=arm --build-arg GOARM=7
-ARG GOARM=
-
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH GOARM=$GOARM \
+# TARGETOS, TARGETARCH, and TARGETVARIANT are set automatically by Docker buildx.
+# TARGETVARIANT is "v7" for linux/arm/v7 — strip the leading "v" to get GOARM=7.
+ARG TARGETOS TARGETARCH TARGETVARIANT
+RUN CGO_ENABLED=0 \
+    GOOS=$TARGETOS \
+    GOARCH=$TARGETARCH \
+    GOARM=${TARGETVARIANT#v} \
     go build -trimpath -ldflags="-s -w" -o /app/server ./cmd/server
 
 # --- final stage ---
