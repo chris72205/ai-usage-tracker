@@ -25,6 +25,7 @@ jobs:
             extension/manifest.json \
             extension/intercept.js \
             extension/background.js \
+            extension/bridge.js \
             extension/options.html \
             extension/options.js
 
