@@ -1,0 +1,52 @@
+replicaCount: 3
+
+image:
+  repository: chris72205/ai-usage-svc
+  pullPolicy: IfNotPresent
+  tag: latest
+
+imagePullSecrets:
+  - name: registry-chrisjacob
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
+    ingress.kubernetes.io/ssl-redirect: "true"
+  # Overridden at deploy time via --set host=... / GitHub secret
+  host: placeholder.example.com
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 64Mi
+
+# All runtime config is injected as env vars from the secret created by templates/secret.yaml.
+# Values here are empty — populated via --set at deploy time.
+config:
+  port: "8080"
+  serviceName: ai-usage-svc
+  apiBearerToken: ""
+  dedupWindowSeconds: "30"
+  redisUrl: ""
+  rabbitmqUrl: ""
+  rabbitmqExchange: usage
+  influxUrl: ""
+  influxToken: ""
+  influxOrg: ""
+  influxBucket: ai-agent-usages
+
+# Populated via --set dockerhub_registry_config=... at deploy time
+dockerhub_registry_config: ""

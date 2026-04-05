@@ -1,0 +1,79 @@
+// --- Helpers ---
+
+const formatWindow = (w) => w === null ? null : {
+  utilizationPct: w.utilization,
+  resetsAt: w.resets_at,
+};
+
+// --- Per-platform parsers ---
+// Each entry defines:
+//   matches  — RegExp tested against the intercepted URL
+//   parse    — transforms the raw API response into a normalised payload
+
+const PLATFORMS = {
+  claude: {
+    matches: /\/api\/organizations\/[^/]+\/usage/,
+    parse(raw) {
+      return {
+        platform: 'claude',
+        fiveHour:          formatWindow(raw.five_hour),
+        sevenDay:          formatWindow(raw.seven_day),
+        sevenDayOauthApps: formatWindow(raw.seven_day_oauth_apps),
+        sevenDayOpus:      formatWindow(raw.seven_day_opus),
+        sevenDaySonnet:    formatWindow(raw.seven_day_sonnet),
+        sevenDayCowork:    formatWindow(raw.seven_day_cowork),
+        iguanaNecktie:     formatWindow(raw.iguana_necktie),
+        extraUsage: raw.extra_usage === null ? null : {
+          isEnabled:      raw.extra_usage.is_enabled,
+          monthlyLimit:   raw.extra_usage.monthly_limit,
+          usedCredits:    raw.extra_usage.used_credits,
+          utilizationPct: raw.extra_usage.utilization,
+        },
+        capturedAt: new Date().toISOString(),
+      };
+    },
+  },
+
+  // Add further platforms here, e.g.:
+  // copilot: {
+  //   matches: /\/api\/usage/,
+  //   parse(raw) { ... },
+  // },
+};
+
+// --- Hostname → platform key ---
+
+const PLATFORM_MAP = {
+  'claude.ai': 'claude',
+};
+
+// --- Interceptor ---
+
+const platform = PLATFORMS[PLATFORM_MAP[location.hostname]];
+
+const _fetch = window.fetch;
+window.fetch = async (...args) => {
+  const res = await _fetch(...args);
+  if (platform) {
+    const url = typeof args[0] === 'string' ? args[0] : args[0]?.url ?? '';
+    if (platform.matches.test(url)) {
+      res.clone().json().then(raw => {
+        const usage = platform.parse(raw);
+        console.log('[AI Usage]', usage);
+
+        chrome.storage.local.get(['serviceUrl', 'bearerToken'], ({ serviceUrl, bearerToken }) => {
+          if (!serviceUrl || !bearerToken || !serviceUrl.startsWith('https://')) return;
+          fetch(serviceUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${bearerToken}`,
+            },
+            body: JSON.stringify(usage),
+          }).catch(() => {});
+        });
+      }).catch(() => {});
+    }
+  }
+  return res;
+};
