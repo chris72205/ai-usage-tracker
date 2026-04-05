@@ -1,0 +1,42 @@
+name: Package Extension
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - extension/**
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from manifest
+        id: version
+        run: echo "version=$(jq -r '.version' extension/manifest.json)" >> $GITHUB_OUTPUT
+
+      - name: Package extension
+        run: |
+          zip -j ai-usage-extension-v${{ steps.version.outputs.version }}.zip \
+            extension/manifest.json \
+            extension/intercept.js
+
+      - name: Create or update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: extension-v${{ steps.version.outputs.version }}
+          name: AI Usage Extension v${{ steps.version.outputs.version }}
+          body: |
+            ### Install
+
+            **Chrome:** `chrome://extensions` → Developer mode → Load unpacked → extract the zip and select that folder
+
+            **Firefox:** rename the `.zip` to `.xpi`, then `about:addons` → gear icon → Install Add-on From File
+
+            See [extension/README.md](./extension/README.md) for full instructions.
+          files: ai-usage-extension-v${{ steps.version.outputs.version }}.zip
+          make_latest: true
