@@ -61,17 +61,9 @@ window.fetch = async (...args) => {
         const usage = platform.parse(raw);
         console.log('[AI Usage]', usage);
 
-        chrome.storage.local.get(['serviceUrl', 'bearerToken'], ({ serviceUrl, bearerToken }) => {
-          if (!serviceUrl || !bearerToken || !serviceUrl.startsWith('https://')) return;
-          fetch(serviceUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${bearerToken}`,
-            },
-            body: JSON.stringify(usage),
-          }).catch(() => {});
-        });
+        // chrome.* APIs are unavailable in MAIN world — delegate to bridge.js
+        // via window messaging so it can access storage and make the fetch.
+        window.postMessage({ type: 'AI_USAGE_PAYLOAD', payload: usage }, '*');
       }).catch(() => {});
     }
   }
