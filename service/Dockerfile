@@ -2,7 +2,7 @@
 
 # --- build stage ---
 # Build on the native runner platform; cross-compile to target via Go toolchain.
-FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
 
 WORKDIR /app
 COPY go.mod go.sum ./
