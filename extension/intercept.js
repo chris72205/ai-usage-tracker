@@ -51,6 +51,14 @@ const PLATFORM_MAP = {
 
 const platform = PLATFORMS[PLATFORM_MAP[location.hostname]];
 
+// debugLogging is synced from bridge.js (isolated world) via postMessage.
+let _debugLogging = false;
+window.addEventListener('message', (event) => {
+  if (event.source === window && event.data?.type === 'AI_USAGE_DEBUG') {
+    _debugLogging = event.data.debugLogging;
+  }
+});
+
 const _fetch = window.fetch;
 window.fetch = async (...args) => {
   const res = await _fetch(...args);
@@ -59,7 +67,7 @@ window.fetch = async (...args) => {
     if (platform.matches.test(url)) {
       res.clone().json().then(raw => {
         const usage = platform.parse(raw);
-        console.log('[AI Usage]', usage);
+        if (_debugLogging) console.log('[AI Usage]', usage);
 
         // chrome.* APIs are unavailable in MAIN world — delegate to bridge.js
         // via window messaging so it can access storage and make the fetch.
